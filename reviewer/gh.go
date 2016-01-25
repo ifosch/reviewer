@@ -59,6 +59,7 @@ func NewGHClient(httpClient *http.Client) *GHClient {
 
 // PullRequestInfo contains the id, title, and CR score of a pull request.
 type PullRequestInfo struct {
+	Author string
 	Number int // id of the pull request
 	Title  string
 	Score  int
@@ -100,6 +101,7 @@ func GetPullRequestInfos(client *GHClient, owner string, repo string) ([]PullReq
 	}
 	pris := make([]PullRequestInfo, len(pullRequests))
 	for n, pullRequest := range pullRequests {
+		pris[n].Author = *pullRequest.User.Login
 		pris[n].Number = *pullRequest.Number
 		pris[n].Title = *pullRequest.Title
 		comments, _, err := client.Tickets.ListComments(owner, repo, *pullRequest.Number, nil)
@@ -107,7 +109,8 @@ func GetPullRequestInfos(client *GHClient, owner string, repo string) ([]PullReq
 			return nil, err
 		}
 		for _, comment := range comments {
-			if comment.Body == nil {
+			commentAuthor := *comment.User.Login
+			if (comment.Body == nil) && (commentAuthor == pris[n].Author) {
 				continue
 			}
 			pris[n].Score += getCommentSuccessScore(*comment.Body)

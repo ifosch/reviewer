@@ -111,8 +111,9 @@ func TestCommentSuccessScore(t *testing.T) {
 	testScore("Oops +1 :-1: +1", 0)
 }
 
-func newMockPullRequest(number int, title string, mergeable bool) github.PullRequest {
+func newMockPullRequest(number int, title string, mergeable bool, author string) github.PullRequest {
 	return github.PullRequest{
+		User:      &github.User{Login: &author},
 		Number:    &number,
 		Title:     &title,
 		Mergeable: &mergeable,
@@ -139,7 +140,7 @@ func TestGetPullRequestsInfo(t *testing.T) {
 	}
 
 	onePR := make([]github.PullRequest, 1)
-	onePR[0] = newMockPullRequest(10, "Initial PR", false)
+	onePR[0] = newMockPullRequest(10, "Initial PR", false, "user1")
 	client = newMockGHClient(onePR, emptyListIC)
 
 	result, err = reviewer.GetPullRequestInfos(client, "user", "repo")
@@ -152,8 +153,8 @@ func TestGetPullRequestsInfo(t *testing.T) {
 	}
 
 	twoPR := make([]github.PullRequest, 2)
-	twoPR[0] = newMockPullRequest(10, "Initial PR", true)
-	twoPR[1] = newMockPullRequest(11, "Not so initial PR", false)
+	twoPR[0] = newMockPullRequest(10, "Initial PR", true, "user1")
+	twoPR[1] = newMockPullRequest(11, "Not so initial PR", false, "user1")
 	client = newMockGHClient(twoPR, emptyListIC)
 
 	result, err = reviewer.GetPullRequestInfos(client, "user", "repo")
@@ -170,7 +171,8 @@ func TestIsMergeable(t *testing.T) {
 	id := 1
 	title := "Initial PR"
 	mergeable := true
-	pr := newMockPullRequest(id, title, mergeable)
+	author := "user"
+	pr := newMockPullRequest(id, title, mergeable, author)
 
 	if !reviewer.IsMergeable(&pr) {
 		t.Fatalf("PR #%d, %s should be mergeable", id, title)
